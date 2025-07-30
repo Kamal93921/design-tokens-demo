@@ -1,8 +1,17 @@
 name: Build Tokens
-on: [push]
+on:
+  push:
+    paths: [ 'tokens/**' ]  # This should now match your folder structure
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - run: node build.js
+    - name: Commit files
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add build/
+        git commit -m "🤖 Generated platform files" || echo "No changes"
+        git push || echo "Nothing to push"
