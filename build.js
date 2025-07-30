@@ -1,8 +1,7 @@
 const fs = require('fs');
 const tokens = JSON.parse(fs.readFileSync('tokens/tokens.json', 'utf8'));
 
-console.log('📖 Full token structure:');
-console.log(JSON.stringify(tokens, null, 2));
+console.log('📖 Reading tokens...');
 
 // Create build directories  
 if (!fs.existsSync('build')) fs.mkdirSync('build');
@@ -10,40 +9,66 @@ if (!fs.existsSync('build/android')) fs.mkdirSync('build/android', { recursive: 
 if (!fs.existsSync('build/ios')) fs.mkdirSync('build/ios', { recursive: true });
 if (!fs.existsSync('build/flutter')) fs.mkdirSync('build/flutter', { recursive: true });
 
-// Function to extract tokens from nested structure
-function extractTokens(obj, path = []) {
-  let colors = {};
-  let spacing = {};
-  
-  function traverse(current, currentPath) {
-    if (current && typeof current === 'object') {
-      // Check if this is a token with $value
-      if (current.$type && current.$value) {
-        const name = currentPath[currentPath.length - 1];
-        if (current.$type === 'color') {
-          colors[name] = current.$value;
-          console.log(`Found color: ${name} = ${current.$value}`);
-        } else if (current.$type === 'spacing') {
-          spacing[name] = current.$value;
-          console.log(`Found spacing: ${name} = ${current.$value}`);
-        }
-      } else {
-        // Continue traversing
-        Object.entries(current).forEach(([key, value]) => {
-          traverse(value, [...currentPath, key]);
-        });
-      }
-    }
-  }
-  
-  traverse(obj, path);
-  return { colors, spacing };
+let colors = {};
+let spacing = {};
+
+// Function to extract tokens - handle both $value and value
+function extractToken(token) {
+  return token.$value || token.value;
 }
 
-const { colors, spacing } = extractTokens(tokens);
+function extractType(token) {
+  return token.$type || token.type;
+}
 
-console.log('\n🎨 Extracted colors:', colors);
-console.log('📏 Extracted spacing:', spacing);
+// Check root level tokens (under "")
+if (tokens[""] && tokens[""].colors) {
+  Object.entries(tokens[""].colors).forEach(([name, token]) => {
+    const value = extractToken(token);
+    const type = extractType(token);
+    if (value && type === 'color') {
+      colors[name] = value;
+      console.log(`Found root color: ${name} = ${value}`);
+    }
+  });
+}
+
+if (tokens[""] && tokens[""].spacing) {
+  Object.entries(tokens[""].spacing).forEach(([name, token]) => {
+    const value = extractToken(token);
+    const type = extractType(token);
+    if (value && type === 'spacing') {
+      spacing[name] = value;
+      console.log(`Found root spacing: ${name} = ${value}`);
+    }
+  });
+}
+
+// Check core level tokens
+if (tokens.core && tokens.core.colors) {
+  Object.entries(tokens.core.colors).forEach(([name, token]) => {
+    const value = extractToken(token);
+    const type = extractType(token);
+    if (value && type === 'color') {
+      colors[name] = value;
+      console.log(`Found core color: ${name} = ${value}`);
+    }
+  });
+}
+
+if (tokens.core && tokens.core.spacing) {
+  Object.entries(tokens.core.spacing).forEach(([name, token]) => {
+    const value = extractToken(token);
+    const type = extractType(token);
+    if (value && type === 'spacing') {
+      spacing[name] = value;
+      console.log(`Found core spacing: ${name} = ${value}`);
+    }
+  });
+}
+
+console.log('\n🎨 All colors found:', colors);
+console.log('📏 All spacing found:', spacing);
 
 // Generate Android colors.xml
 let androidXml = '<?xml version="1.0" encoding="UTF-8"?>\n<resources>\n';
