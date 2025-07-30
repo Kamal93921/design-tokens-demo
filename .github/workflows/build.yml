@@ -1,7 +1,7 @@
 name: Build Tokens
 on:
   push:
-    paths: [ 'tokens/**' ]  # This should now match your folder structure
+    paths: [ 'tokens/**' ]  # Now it will trigger when tokens/ folder changes
 jobs:
   build:
     runs-on: ubuntu-latest
